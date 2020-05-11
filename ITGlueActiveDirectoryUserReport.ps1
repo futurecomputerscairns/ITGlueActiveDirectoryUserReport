@@ -63,7 +63,7 @@ function BuildActiveDirectoryUserAsset ($tenantInfo) {
                     "name"      = $tenantInfo.name
                     "username"        = $tenantInfo.username
                     "enabled"   = $tenantInfo.enabled
-                    "group-membership" = $tenantInfo.groups
+                    "group-membership" = $tenantInfo.groups | Sort-Object
                     "last-login-date"         = $tenantInfo.lastlogondate
                    
                 }
@@ -138,15 +138,16 @@ if($attempted_match.data[0].attributes.name -match $organisation) {
     #Here we will add each group Name to UserGroupMembership array
     $UserGroupMembership += $GroupDetails.Name
     }
-    #As the UserGroupMembership is array we need to join element with ‘,’ as the seperator
-    $Groups = $UserGroupMembership -join ‘, ‘
+    #As the UserGroupMembership is array we need to join element with ‘"<br/>"’ as the seperator
+    $Groups = $UserGroupMembership -join "<br/>" | Sort-Object 
+    $LogonDate = $User.LastLogonDate | Out-String
     #Creating custom objects
     $Out = New-Object PSObject
     $Out | Add-Member -MemberType noteproperty -Name Name -Value $User.Name
     $Out | Add-Member -MemberType noteproperty -Name Username -Value $User.SamAccountName
     $Out | Add-Member -MemberType noteproperty -Name Enabled -Value $User.Enabled
     $Out | Add-Member -MemberType noteproperty -Name Groups -Value $Groups
-    $Out | Add-Member -MemberType noteproperty -Name LastLogonDate -Value $User.LastLogonDate
+    $Out | Add-Member -MemberType noteproperty -Name LastLogonDate -Value $LogonDate 
     $Report += $Out
     }
 
@@ -157,13 +158,13 @@ ForEach ($UserItem in $Report){
 
     if ($matchingAsset) {
             Write-Output "Updating Active Directory User Flexible Asset"
-            $UpdatedBody = BuildActiveDirectoryAsset -tenantInfo $Useritem
+            $UpdatedBody = BuildActiveDirectoryUserAsset -tenantInfo $Useritem
             $updatedItem = UpdateITGItem -resource flexible_assets -existingItem $matchingAsset -newBody $UpdatedBody
             Start-Sleep -Seconds 3
         }
         else {
             Write-Output "Creating Active Directory User Flexible Asset"
-            $body = BuildActiveDirectoryAsset -tenantInfo $Useritem
+            $body = BuildActiveDirectoryUserAsset -tenantInfo $Useritem
             CreateITGItem -resource flexible_assets -body $body
             Start-Sleep -Seconds 3
             
